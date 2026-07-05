@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Menu, X, AlertTriangle, RefreshCw } from "lucide-react";
+import { Menu, X, AlertTriangle, RefreshCw, Hourglass } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { MessageBubble } from "./MessageBubble";
 import { ChatInput } from "./ChatInput";
@@ -17,13 +17,20 @@ import { getPersona, type PersonaId } from "@/lib/personas";
 import { newId, deriveTitle, type ChatMessage, type Conversation } from "@/lib/types";
 import type { ChatMessage as ApiChatMessage } from "@/lib/llm";
 
+class RateLimitError extends Error {}
+
+interface BannerError {
+  message: string;
+  kind: "error" | "limit";
+}
+
 export function ChatWindow() {
   const [hydrated, setHydrated] = useState(false);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activePersona, setActivePersona] = useState<PersonaId>("hitesh");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<BannerError | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -187,6 +194,7 @@ export function ChatWindow() {
           } catch {
             // ignore
           }
+          if (res.status === 429) throw new RateLimitError(msg);
           throw new Error(msg);
         }
         if (!res.body) throw new Error("No response body.");
@@ -223,7 +231,10 @@ export function ChatWindow() {
         if ((err as Error).name === "AbortError") {
           // user stopped — keep what we have
         } else {
-          setError((err as Error).message);
+          setError({
+            message: (err as Error).message,
+            kind: err instanceof RateLimitError ? "limit" : "error"
+          });
           // Remove empty placeholder on error
           setConversations((prev) =>
             prev.map((c) =>
@@ -317,10 +328,23 @@ export function ChatWindow() {
           sidebarOpen={sidebarOpen}
         />
 
-        {error && (
+        {error && error.kind === "limit" && (
+          <div className="border-b border-amber-500/20 bg-amber-500/10 px-4 py-2.5 flex items-center gap-2 text-sm text-amber-200">
+            <Hourglass size={15} className="shrink-0" />
+            <span className="flex-1">{error.message}</span>
+            <button
+              onClick={() => setError(null)}
+              className="text-amber-200/70 hover:text-amber-100 px-1"
+              aria-label="Dismiss"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+        {error && error.kind === "error" && (
           <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-2.5 flex items-center gap-2 text-sm text-red-200">
             <AlertTriangle size={15} className="shrink-0" />
-            <span className="flex-1 truncate">{error}</span>
+            <span className="flex-1 truncate">{error.message}</span>
             <button
               onClick={retryLast}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/20 hover:bg-red-500/30 text-red-100"

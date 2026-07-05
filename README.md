@@ -19,6 +19,7 @@ Deploy in 60 seconds on Vercel: see **[Deployment](#deployment)**.
 - 💾 **Local-first persistence** — conversations live in `localStorage`; nothing is stored server-side.
 - 🧑‍💻 **Code blocks** with syntax highlighting (oneDark).
 - 📜 **In-app docs** at `/docs` explaining persona prep, prompt design, and context strategy.
+- 🚦 **Per-IP rate limiting** — 10 messages per day per IP by default (in-memory, configurable via `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_MS`); the UI shows a "daily limit reached" banner with the time until reset.
 - 🔌 **Provider-agnostic** — works with any OpenAI-compatible API. Defaults to OpenAI (`gpt-5-mini`); Groq, OpenRouter, Together, etc. work by swapping two env vars.
 
 ---
@@ -151,6 +152,8 @@ See **[docs/PROMPTS.md](./docs/PROMPTS.md)** for the full design.
 | `LLM_MAX_TOKENS` | `1024` | Max tokens per response (sent as `max_completion_tokens` for reasoning models). |
 | `LLM_TEMPERATURE` | `0.7` | Default temperature; overridden per persona. Ignored by GPT-5/o-series models. |
 | `LLM_CONTEXT_WINDOW` | `20` | Recent messages kept as context (~10 turns). |
+| `RATE_LIMIT_MAX` | `10` | Max messages per IP per window. |
+| `RATE_LIMIT_WINDOW_MS` | `86400000` | Rate-limit window in ms (default 24 h). |
 
 ---
 

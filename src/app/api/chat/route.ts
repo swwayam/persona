@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getLLMConfig, chatStream, LLMConfigError, type ChatMessage } from "@/lib/llm";
 import { type PersonaId } from "@/lib/personas";
 import { buildContextMessages } from "@/lib/context";
+import { checkRateLimit, formatTimeLeft } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,28 @@ export async function POST(req: NextRequest) {
   const last = body.messages[body.messages.length - 1];
   if (!last || last.role !== "user" || !last.content?.trim()) {
     return jsonError(400, "Last message must be a non-empty user message.");
+  }
+
+  // Rate limit only valid message sends, so malformed requests don't burn quota.
+  const verdict = checkRateLimit(clientIp(req));
+  if (!verdict.ok) {
+    return new Response(
+      JSON.stringify({
+        error: `Daily limit reached — you've used all ${verdict.limit} free messages for today. Try again in ${formatTimeLeft(verdict.resetAt)}.`,
+        code: "rate_limited",
+        resetAt: verdict.resetAt
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.max(1, Math.ceil((verdict.resetAt - Date.now()) / 1000))),
+          "X-RateLimit-Limit": String(verdict.limit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.ceil(verdict.resetAt / 1000))
+        }
+      }
+    );
   }
 
   let cfg;
@@ -97,9 +120,22 @@ export async function POST(req: NextRequest) {
       "Content-Type": "text/event-stream; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
-      "X-Accel-Buffering": "no"
+      "X-Accel-Buffering": "no",
+      "X-RateLimit-Limit": String(verdict.limit),
+      "X-RateLimit-Remaining": String(verdict.remaining),
+      "X-RateLimit-Reset": String(Math.ceil(verdict.resetAt / 1000))
     }
   });
+}
+
+/**
+ * Behind a proxy/CDN (Vercel, Nginx) the real client IP arrives in
+ * x-forwarded-for; the socket address is the proxy's.
+ */
+function clientIp(req: NextRequest): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return req.headers.get("x-real-ip") ?? "unknown";
 }
 
 function jsonError(status: number, message: string): Response {
