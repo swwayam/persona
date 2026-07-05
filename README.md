@@ -2,6 +2,9 @@
 
 > An AI-powered website that simulates conversations with **Hitesh Choudhary** and **Piyush Garg**, matching each person's tone, vocabulary, and teaching style.
 
+
+Note: 95% AI Built. AI Features Built By Hand Reviewed By Claude
+
 Built with Next.js 14, TypeScript, Tailwind CSS, and any OpenAI-compatible LLM (Groq, OpenAI, OpenRouter, Together, Mistral, vLLM, ...).
 
 ---
