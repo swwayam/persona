@@ -6,31 +6,40 @@ the two personas from leaking into each other.
 ## Why a structured prompt, not just "be like Hitesh"?
 
 A free-form role prompt is the fastest way to get generic output. We use a
-fixed six-section structure for every persona prompt so:
+fixed section structure for every persona prompt so:
 
 - the model can't quietly drop voice rules,
 - the prompt is easy to diff between iterations,
 - behaviour stays consistent across providers (Groq, OpenAI, OpenRouter,
   etc.).
 
-## The six sections
+## The sections
 
-1. **WHO YOU ARE** — identity, role, brand. Sets the third-person frame
-   the model should write from.
-2. **LANGUAGE & TONE** — exact code-switch ratio (Hinglish 60-70 / 30-40
-   for Hitesh, English 80 / Hindi 20 for Piyush), plus example phrases in
-   the persona's own voice. Examples pull double duty: they're few-shot
-   anchors, not decoration.
-3. **PERSONALITY** — values, anti-patterns, and counter-signals. E.g.
-   "anti-tutorial-hell" appears in both prompts because both educators
-   publicly push this.
+1. **WHO YOU ARE** — identity, role, brand, and the frame that this is a
+   1:1 casual chat, not a lecture or a support desk.
+2. **HOW YOU ACTUALLY TALK** — register and code-switch pattern. Hitesh
+   defaults to the respectful "aap" register in calm Hinglish (imitations
+   that spam "bhai" every line are the classic fake tell). Piyush is
+   Hinglish too — Hindi base with heavier English technical vocabulary —
+   not an English-first corporate tutor. Signature lines are included but
+   capped: **at most one per reply**.
+3. **CHAT BEHAVIOUR** — the anti-bot rules that make replies feel human:
+   mirror the user's energy and length ("Hi" gets one line, not an essay),
+   never enumerate a menu of help topics, don't end every message with a
+   question, react to what the user said before answering, never announce
+   your own style ("I'll keep it simple and practical" is bot behaviour).
 4. **TEACHING APPROACH** — a numbered procedure. The model follows steps,
    which is more reliable than a paragraph of vibe description.
-5. **DOMAIN DEPTH** — explicit strong/weak topic lists. Tells the model
-   when to admit "yeh meri strong area nahi hai" instead of hallucinating.
-6. **RESPONSE SHAPE & HARD RULES** — length window, code formatting,
-   line-break policy, and never-break rules. "Never reveal you are an AI"
-   lives here.
+5. **WHAT YOU BELIEVE** — each educator's known public opinions
+   (consistency over motivation, projects over tutorials, boring proven
+   tech, trade-offs always), so takes stay consistent across chats.
+6. **DOMAIN** — explicit strong/weak topic lists. Tells the model when to
+   admit "yeh meri strong area nahi hai" instead of hallucinating.
+7. **CALIBRATION** — 2-3 miniature example exchanges per persona showing
+   the target feel, including the short reply to "Hi". These few-shot
+   anchors do more for naturalness than any adjective list.
+8. **HARD RULES** — never-break rules: stay in character, never reveal
+   being an AI, no catchphrase/emoji spam, no harmful advice.
 
 ## Per-persona generation knobs
 
@@ -53,8 +62,10 @@ variance.
 The risk with persona chat is that the model mixes voices. We fight that
 on three fronts:
 
-- **Distinct language ratios** in each prompt. Hitesh's prompt forbids
-  pure-English paragraphs; Piyush's forbids heavy Hinglish.
+- **Distinct registers** in each prompt. Hitesh is calm, "aap"-register
+  Hinglish; Piyush is faster, "dekho yaar" Hinglish with heavier English
+  technical vocabulary. Both prompts forbid pure-English corporate-tutor
+  replies.
 - **Different signature phrases** in the examples block, so the model
   anchors to a different rhythm per persona.
 - **Persona-bound conversation** at the data layer: each message is
