@@ -15,7 +15,7 @@ Deploy in 60 seconds on Vercel: see **[Deployment](#deployment)**.
 
 ## Features
 
-- 🎭 **Two real personas** — Hitesh (Hinglish, big-brother energy) and Piyush (English-first, system-design voice).
+- 🎭 **Two real personas** — Hitesh (calm, "aap"-register Hinglish, chai-mentor energy) and Piyush (energetic Hinglish, system-design and production voice).
 - 🔄 **Live persona switcher** in the header. Switching starts a fresh conversation.
 - 💬 **Streaming responses** with token-by-token updates, abortable mid-stream.
 - 🧠 **Sliding-window context** that keeps the last ~10 turns coherent.
@@ -31,8 +31,8 @@ Deploy in 60 seconds on Vercel: see **[Deployment](#deployment)**.
 
 ```bash
 # 1. Clone
-git clone https://github.com/your-username/persona-chat.git
-cd persona-chat
+git clone https://github.com/swwayam/persona.git
+cd persona
 
 # 2. Install
 npm install
@@ -127,12 +127,14 @@ The full design doc lives at **[/docs](http://localhost:3000/docs)** once the ap
 
 There is **no fine-tuning, no RAG, no scraping at scale**. Each persona is a single, large system prompt in [`src/lib/personas.ts`](./src/lib/personas.ts) that encodes:
 
-- WHO YOU ARE — identity, role, brand
-- LANGUAGE & TONE — exact Hinglish/English ratio and signature phrases
-- PERSONALITY — values, anti-patterns, what they never do
+- WHO YOU ARE — identity, role, brand, and the 1:1-casual-chat frame
+- HOW YOU ACTUALLY TALK — register ("aap" vs "dekho yaar"), code-switch pattern, capped signature lines
+- CHAT BEHAVIOUR — the anti-bot rules: mirror message length, no help-topic menus, no catchphrase spam
 - TEACHING APPROACH — numbered procedure the model follows
-- DOMAIN DEPTH — strong / weak topics so the model can admit limits
-- RESPONSE SHAPE & HARD RULES — length, code formatting, never-break rules
+- WHAT YOU BELIEVE — each educator's known public opinions, for consistent takes
+- DOMAIN — strong / weak topics so the model can admit limits
+- CALIBRATION — miniature example exchanges anchoring the target feel
+- HARD RULES — never-break rules (stay in character, no harmful advice)
 
 Per-persona sampling tweaks live in [`src/app/api/chat/route.ts`](./src/app/api/chat/route.ts):
 
